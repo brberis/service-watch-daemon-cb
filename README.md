@@ -7,6 +7,7 @@ sudo chmod +x  /usr/local/bin/check-services.sh
 
 ### Enable and start service
 sudo systemctl daemon-reload
+sudo systemctl enable watch-dog.service
 sudo systemctl enable watch-dog.timer
 sudo systemctl start watch-dog.timer
 sudo systemctl restart watch-dog.timer
