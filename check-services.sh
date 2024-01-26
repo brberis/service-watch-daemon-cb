@@ -1,21 +1,22 @@
-
 #!/bin/bash
 
-### Check status, start, or restart a given service ###
+### Check status, start, or restart services defined in an environment variable ###
 
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 <service-name>"
+if [ -z "$SERVICES_LIST" ]; then
+    echo "No services specified. Set SERVICES_LIST environment variable."
     exit 1
 fi
 
-service_name=$1
+IFS=',' read -ra SERVICES <<< "$SERVICES_LIST"
 
 check_service_status() {
+    local service_name=$1
+
     # Check if the service is active
-    isActive=$(systemctl is-active $service_name)
+    isActive=$(systemctl is-active "$service_name")
     if [ "$isActive" = "active" ]; then
         # Service is running, now check if it has failed
-        service_status=$(systemctl status $service_name)
+        service_status=$(systemctl status "$service_name")
         if echo "$service_status" | grep -q "...fail!"; then
             return 1 # Service is running but failed
         else
@@ -26,35 +27,42 @@ check_service_status() {
     fi
 }
 
-attempt_count=0
 max_attempts=3
 
-while [ $attempt_count -lt $max_attempts ]; do
-    check_service_status
-    status=$?
+# Loop through each service in the list
+for service_name in "${SERVICES[@]}"; do
+    attempt_count=0
 
-    case $status in
-        0)
-            echo "$service_name service - O.K."
-            exit 0
-            ;;
-        1)
-            echo "$service_name Failed. Attempting to restart..."
-            sudo systemctl restart $service_name
-            ;;
-        2)
-            echo "$service_name is stopped. Attempting to start..."
-            sudo systemctl start $service_name
-            ;;
-    esac
+    while [ $attempt_count -lt $max_attempts ]; do
+        check_service_status "$service_name"
+        status=$?
 
-    let attempt_count=attempt_count+1
-    echo "Attempt $attempt_count of $max_attempts for $service_name."
+        case $status in
+            0)
+                echo "$service_name service - O.K."
+                ;;
+            1)
+                echo "$service_name Failed. Attempting to restart..."
+                sudo systemctl restart "$service_name"
+                ;;
+            2)
+                echo "$service_name is stopped. Attempting to start..."
+                sudo systemctl start "$service_name"
+                ;;
+        esac
 
-    if [ $attempt_count -lt $max_attempts ]; then
-        sleep 1
-    else
-        echo "Service $service_name status: failed to start after $max_attempts attempts."
-        exit 1
-    fi
+        ((attempt_count++))
+        echo "Attempt $attempt_count of $max_attempts for $service_name."
+
+        if [ $attempt_count -lt $max_attempts ]; then
+            sleep 1
+        else
+            echo "Service $service_name status: failed to start after $max_attempts attempts."
+            break
+        fi
+    done
+
+    echo "Processing next service..."
 done
+
+echo "All services processed."

@@ -3,10 +3,10 @@ Description=Your Service Checker Daemon
 After=network.target
 
 [Service]
-Environment="SERVICES=ypbind,pbs_mom"
+Environment="SERVICES_LIST=ypbind"
 ExecStart=/usr/local/bin/check-services.sh
 Restart=always
-User=username
+User=root
 Group=root
 
 [Install]
