@@ -6,6 +6,7 @@ After=network.target
 Environment="SERVICES_LIST=ypbind"
 ExecStart=/usr/local/bin/check-services.sh
 Restart=always
+StartLimitInterval=1min
 User=root
 Group=root
 

@@ -27,7 +27,7 @@ check_service_status() {
     fi
 }
 
-max_attempts=3
+max_attempts=1 
 
 # Loop through each service in the list
 for service_name in "${SERVICES[@]}"; do
