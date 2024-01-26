@@ -1,0 +1,9 @@
+[Unit]
+Description=Timer for check-services
+
+[Timer]
+OnUnitActiveSec=5s
+Unit=watch-dog.service
+
+[Install]
+WantedBy=timers.target
